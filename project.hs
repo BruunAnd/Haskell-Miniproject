@@ -14,11 +14,18 @@ charFreq char str = length (filter (==char) str)
 -- Create an association list from characters to their frequencies
 -- TODO: Change this
 freqList :: String -> [(Char, Int)]
-freqList str = [(char, freq) | char <- ['A'..'z'], let freq = charFreq char str, freq > 0]
+freqList str = [(char, freq) | char <- ['A'..'z']++[' '], let freq = charFreq char str, freq > 0]
 
 -- Data type for bits and type synonym for a list of bits
 data Bit = Zero | One deriving Show
 type Bits = [Bit]
+
+-- Define equality on the bit datatype
+instance Eq Bit where
+    Zero == Zero = True
+    Zero == One = False
+    One == One = True
+    One == Zero = False
 
 -- Data type definition for the (Huffman binary tree)
 -- At leaf nodes, we store chars with their associated frequency
@@ -51,15 +58,54 @@ buildTree :: [(Char, Int)] -> BTree
 buildTree list = buildTree' (sort (freqToLeaves list))
                  where
                     buildTree' [x] = x
-                    buildTree' (x:y:r) = buildTree'(sortedInsert (mergeTree x y) r)
+                    buildTree' (x:y:r) = buildTree' (sortedInsert (mergeTree x y) r)
 
 -- Recursively construct encoding map given a BTree
 buildMap :: BTree -> [(Char, Bits)]
 buildMap tree = buildMap' tree []
                 where
-                    buildMap' (Branch l r _) list = (buildMap' l list:Zero) ++ (buildMap' r list:One)
-                    buildMap' (Leaf char _) list = [(char, list)]
-        
+                    -- From a branch, we will explore both the left and right branch
+                    buildMap' (Branch l r _) list = buildMap' l (Zero:list) ++ buildMap' r (One:list)
+                    -- When we encounter a leaf, we return the reverse of the path needed to get to the associated char
+                    buildMap' (Leaf char _) list = [(char, reverse list)]
 
-test = freqList "aadasasoijdasoasodasojidoijaodjadas"
+-- Composite function to build a tree from a string
+mapFromString :: String -> [(Char, Bits)]
+mapFromString = buildMap . buildTree . freqList
+
+-- Encode a character using a mapping
+-- Using Prelude's lookup here, which returns a Maybe type
+-- Nothing should never be returned unless there is a bug in the encoder
+encodeChar :: Char -> [(Char, Bits)] -> Bits
+encodeChar char mapping = let result = lookup char mapping in
+                              case result of
+                                  Just value -> value
+                                  Nothing -> error "Error during lookup"
+
+-- Encode a string given a mapping
+encode' :: String -> [(Char, Bits)] -> Bits
+encode' str mapping = concatMap (\char -> encodeChar char mapping) str
+
+-- Encode a string
+encode :: String -> Bits
+encode str = let mapping = mapFromString str in encode' str mapping
+
+-- Decode a string
+-- The approach here is to traverse the tree until we encounter a leaf
+-- When we encounter a leaf, we return the char of that leaf and then start from the root again
+decode :: BTree -> Bits -> String
+decode tree bits = decode' tree bits
+                   where
+                       -- In the base case there are no more bits to consume, so we return an empty list
+                       decode' _ [] = []
+                       -- Unlike when choosing a bit, we do not consume a bit when we consume a leaf
+                       decode' (Leaf char _) all = char : decode' tree all
+                       -- When we encounter a branch, we consume a bit and follow the path
+                       decode' (Branch l r _) (bit:rest) = if bit == Zero then decode' l rest else decode' r rest
+
+strengen = "ab"
+test = freqList strengen
 tree = buildTree test
+emap = buildMap(tree)
+encoded = encode' strengen emap
+decoded = decode tree encoded
