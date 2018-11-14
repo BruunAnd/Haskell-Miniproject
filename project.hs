@@ -1,4 +1,5 @@
 import Data.List (sort)
+import Debug.Trace
 
 -- Helper function to insert an element into a sorted list
 sortedInsert :: Ord a => a -> [a] -> [a]
@@ -86,24 +87,20 @@ encodeChar char mapping = let result = lookup char mapping in
 encode' :: String -> [(Char, Bits)] -> Bits
 encode' str mapping = concatMap (\char -> encodeChar char mapping) str
 
--- Encode a string
-encode :: String -> Bits
-encode str = let mapping = mapFromString str in encode' str mapping
-
--- Decode a string
+-- Decode a string given a Huffman tree and bits
 -- The approach here is to traverse the tree until we encounter a leaf
 -- When we encounter a leaf, we return the char of that leaf and then start from the root again
 decode :: BTree -> Bits -> String
 decode tree bits = decode' tree bits
                    where
-                       -- In the base case there are no more bits to consume, so we return an empty list
-                       decode' _ [] = []
+                       -- In the case there are no more bits to consume, consume the last leaf
+                       decode' (Leaf char _) [] = [char]
                        -- Unlike when choosing a bit, we do not consume a bit when we consume a leaf
                        decode' (Leaf char _) all = char : decode' tree all
                        -- When we encounter a branch, we consume a bit and follow the path
                        decode' (Branch l r _) (bit:rest) = if bit == Zero then decode' l rest else decode' r rest
 
-strengen = "ab"
+strengen = "test"
 test = freqList strengen
 tree = buildTree test
 emap = buildMap(tree)
