@@ -1,5 +1,5 @@
 import Data.List (sort)
-import Debug.Trace
+import Data.Set (toList, fromList)
 
 -- Helper function to insert an element into a sorted list
 sortedInsert :: Ord a => a -> [a] -> [a]
@@ -12,10 +12,17 @@ sortedInsert elem (x:xs) = if elem <= x
 charFreq :: Char -> String -> Int
 charFreq char str = length (filter (==char) str)
 
+-- To count character frequency, I count how frequently each unique character appears
+-- A simple approach is to convert the string to a set, s.t. there are no duplicates, and then converting it back
+uniqueList :: Ord a => [a] -> [a]
+uniqueList = toList . fromList
+
 -- Create an association list from characters to their frequencies
 -- TODO: Change this
 freqList :: String -> [(Char, Int)]
-freqList str = [(char, freq) | char <- ['A'..'z']++[' '], let freq = charFreq char str, freq > 0]
+freqList str = let uniques = uniqueList str in map (\char -> (char, charFreq char str)) uniques
+
+--[(char, freq) | char <- ['A'..'z']++[' '], let freq = charFreq char str, freq > 0]
 
 -- Data type for bits and type synonym for a list of bits
 data Bit = Zero | One deriving Show
@@ -87,6 +94,10 @@ encodeChar char mapping = let result = lookup char mapping in
 encode' :: String -> [(Char, Bits)] -> Bits
 encode' str mapping = concatMap (\char -> encodeChar char mapping) str
 
+-- Encode a string and return its tree + the encoded string
+encode :: String -> (BTree, Bits)
+encode str = let tree = buildTree (freqList str) in (tree, encode' str (buildMap tree))
+
 -- Decode a string given a Huffman tree and bits
 -- The approach here is to traverse the tree until we encounter a leaf
 -- When we encounter a leaf, we return the char of that leaf and then start from the root again
@@ -99,10 +110,3 @@ decode tree bits = decode' tree bits
                        decode' (Leaf char _) all = char : decode' tree all
                        -- When we encounter a branch, we consume a bit and follow the path
                        decode' (Branch l r _) (bit:rest) = if bit == Zero then decode' l rest else decode' r rest
-
-strengen = "test"
-test = freqList strengen
-tree = buildTree test
-emap = buildMap(tree)
-encoded = encode' strengen emap
-decoded = decode tree encoded
