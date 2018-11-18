@@ -33,7 +33,6 @@ data Bit = Zero | One deriving (Show, Eq)
 type Bits = [Bit]
 
 -- Data type definition for the (Huffman binary tree)
--- I have not put a constraint on the datatype because I would have to put the constraint on functions anyway
 data BTree a = Leaf a Int | Branch (BTree a) (BTree a) Int deriving Show
 
 -- Define equality on the BTree type. Two nodes are considered equal if they have the same frequency
@@ -45,16 +44,16 @@ instance (Ord a) => Ord (BTree a) where
     compare x y = compare (treeFreq x) (treeFreq y)
 
 -- Given a BTree, treeFreq returns the frequency associated with the root node of the tree
-treeFreq :: Ord a => BTree a -> Int
+treeFreq :: BTree a -> Int
 treeFreq (Leaf e f) = f
 treeFreq (Branch l r f) = f
 
 -- BTrees can be merged such that, given two trees, the resulting tree branches to its two children and uses the sum of its frequencies as its frequency
-mergeTree :: Ord a => BTree a -> BTree a -> BTree a 
+mergeTree :: BTree a -> BTree a -> BTree a 
 mergeTree l r = Branch l r ((treeFreq l) + (treeFreq r))
 
 -- Maps an association list of char frequencies to corresponding leaves
-freqToLeaves :: Ord a => FrequencyList a -> [BTree a]
+freqToLeaves :: FrequencyList a -> [BTree a]
 freqToLeaves freqs = map (\(a, b) -> Leaf a b) freqs
 
 -- Construct a Huffman binary tree given a list of char-frequency pairs
@@ -94,8 +93,6 @@ encode lst = case lst of
                         Just (tree, encode' lst (buildMap tree))
 
 -- Decode a string given a Huffman tree and bits
--- The approach here is to traverse the tree until we encounter a leaf
--- When we encounter a leaf, we return the char of that leaf and then start from the root again
 decode :: Ord a => BTree a -> Bits -> [a]
 decode tree bits = decode' tree bits
                    where
