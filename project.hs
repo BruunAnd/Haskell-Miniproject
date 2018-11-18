@@ -73,19 +73,15 @@ buildMap tree = buildMap' tree []
                     -- When we encounter a leaf, we return the reverse of the path needed to get to the associated char
                     buildMap' (Leaf char _) list = [(char, reverse list)]
 
--- Composite function to build a tree from a string
-mapFromString :: String -> EncodingMap Char
-mapFromString = buildMap . buildTree . freqList
-
 -- Encode a character using a mapping
 -- Using Prelude's lookup here, which returns a Maybe type
 -- Nothing should never be returned unless there is a bug in the encoder
 encodeChar :: Char -> EncodingMap Char -> Bits
 encodeChar char mapping = let result = lookup char mapping
-                            in
-                              case result of
-                                  Just value -> value
-                                  Nothing -> error "Error during lookup"
+                          in
+                            case result of
+                              Just value -> value
+                              Nothing -> error "Error during lookup"
 
 -- Encode a string given a mapping
 encode' :: String -> [(Char, Bits)] -> Bits
