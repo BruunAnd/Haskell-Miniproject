@@ -84,7 +84,7 @@ encodeChar char mapping = let result = lookup char mapping
                               Nothing -> error "Error during lookup"
 
 -- Encode a string given a mapping
-encode' :: String -> [(Char, Bits)] -> Bits
+encode' :: String -> EncodingMap Char -> Bits
 encode' str mapping = concatMap (\char -> encodeChar char mapping) str
 
 -- Encode a string and return its tree + the encoded string
