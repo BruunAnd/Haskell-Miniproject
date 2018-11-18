@@ -20,10 +20,10 @@ uniqueList :: Ord a => [a] -> [a]
 uniqueList = toList . fromList
 
 -- Create an association list from characters to their frequencies
-freqList :: String -> FrequencyList Char
-freqList str = let uniques = uniqueList str
-               in
-                 map (\char -> (char, charFreq char str)) uniques
+buildFreqList :: String -> FrequencyList Char
+buildFreqList str = let uniques = uniqueList str
+                    in
+                      map (\char -> (char, charFreq char str)) uniques
 
 -- Type synonym for encoding map and frequency lists
 type FrequencyList a = [(a, Int)]
@@ -91,7 +91,7 @@ encode' str mapping = concatMap (\char -> encodeChar char mapping) str
 encode :: String -> Maybe (BTree, Bits)
 encode str = case str of 
                 "" -> Nothing
-                _  -> let tree = buildTree (freqList str)
+                _  -> let tree = buildTree (buildFreqList str)
                       in
                         Just (tree, encode' str (buildMap tree))
 
