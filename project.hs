@@ -13,9 +13,8 @@ sortedInsert elem (x:xs) = if elem <= x
 elemFreq :: Ord a => a -> [a] -> Int
 elemFreq elem str = length (filter (==elem) str)
 
--- To count character frequency, I count how frequently each unique character appears
--- A simple approach is to convert the string to a set, s.t. there are no duplicates, and then converting it back
-uniqueList :: Ord a =>[a] -> [a]
+-- Get unique elements in a list (conversion from list -> set -> list)
+uniqueList :: Ord a => [a] -> [a]
 uniqueList = toList . fromList
 
 -- Create an association list from characters to their frequencies
@@ -74,17 +73,17 @@ buildMap tree = buildMap' tree []
 
 -- Encode a character using an encodingmap
 encodeElement :: Ord a => a -> EncodingMap a -> Bits
-encodeElement element mapping = let result = lookup element mapping
-                                in
-                                  case result of
-                                  Just value -> value
-                                  Nothing -> error "Error during lookup"
+encodeElement elem mapping = let result = lookup elem mapping
+                             in
+                                 case result of
+                                   Just value -> value
+                                   Nothing -> error "Error during lookup"
 
 -- Encode a string given a mapping
 encode' :: Ord a => [a] -> EncodingMap a -> Bits
-encode' lst mapping = concatMap (\element -> encodeElement element mapping) lst
+encode' lst mapping = concatMap (\elem -> encodeElement elem mapping) lst
 
--- Encode a list of equatable types and return its tree + t
+-- Encode a list of equatable types and return its tree
 encode :: Ord a => [a] -> Maybe (BTree a, Bits)
 encode lst = case lst of 
                 [] -> Nothing
