@@ -66,8 +66,8 @@ buildTree list = buildTree' (sort (freqToLeaves list))
 buildMap :: Ord a => BTree a -> EncodingMap a
 buildMap tree = buildMap' tree []
                 where
-                    -- From a branch, we will explore both the left and right branch
-                    buildMap' (Branch l r _) list = buildMap' l (Zero:list) ++ buildMap' r (One:list)
+                    -- From a branch, we will explore both the right and left branch
+                    buildMap' (Branch l r _) list = buildMap' r (One:list) ++ buildMap' l (Zero:list)
                     -- When we encounter a leaf, we return the reverse of the path needed to get to the associated char
                     buildMap' (Leaf char _) list = [(char, reverse list)]
 
@@ -105,7 +105,7 @@ decode tree bits = decode' tree bits
                        decode' (Branch l r _) (bit:rest) = if bit == Zero then decode' l rest else decode' r rest
 
 main = do
-    putStrLn "Enter a string to decode: "
+    putStrLn "Enter string to encode and decode: "
     toEncode <- getLine
     let encoded = encode toEncode
     case encoded of
@@ -116,4 +116,6 @@ main = do
                         do
                           putStrLn ("Huffmann tree: " ++ show tree)
                           putStrLn ("Bit encoding: " ++ show bits)
+                          putStrLn ("Encoding length: " ++ show (length bits))
                           putStrLn ("Decoded: " ++ (decode tree bits))
+
