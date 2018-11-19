@@ -35,11 +35,11 @@ type Bits = [Bit]
 data BTree a = Leaf a Int | Branch (BTree a) (BTree a) Int deriving Show
 
 -- Define equality on the BTree type. Two nodes are considered equal if they have the same frequency
-instance (Ord a) => Eq (BTree a) where
+instance Eq (BTree a) where
     x == y = treeFreq x == treeFreq y
 
 -- Define ordering on the BTree type. The ordering is based on the frequency of the node
-instance (Ord a) => Ord (BTree a) where
+instance Ord (BTree a) where
     compare x y = compare (treeFreq x) (treeFreq y)
 
 -- Given a BTree, treeFreq returns the frequency associated with the root node of the tree
@@ -79,11 +79,13 @@ encodeElement elem mapping = let result = lookup elem mapping
                                    Just value -> value
                                    Nothing -> error "Error during lookup"
 
--- Encode a string given a mapping
+-- Encode a string given an encoding map
+-- ConcatMap is used because each element is mapped to a list of bits
 encode' :: Ord a => [a] -> EncodingMap a -> Bits
 encode' lst mapping = concatMap (\elem -> encodeElement elem mapping) lst
 
--- Encode a list of equatable types and return its tree
+-- Encode a list of a totally ordered type and return an encoding and its Huffmann tree
+-- Instead of throwing an error in case of empty lists, I use the Maybe type
 encode :: Ord a => [a] -> Maybe (BTree a, Bits)
 encode lst = case lst of 
                 [] -> Nothing
