@@ -2,20 +2,15 @@
 import Data.List (sort, insert, nub)
 import Text.Read (readMaybe)
 
--- Given a symbol and a list, compute how often the symbol appears in the list
-elemFreq :: Eq a => a -> [a] -> Int
-elemFreq elem str = length (filter (==elem) str)
-
 -- Create an association list from symbols to their frequencies
-buildFreqList :: Eq a => [a] -> FrequencyList a
-buildFreqList list = map (\elem -> (elem, elemFreq elem list)) (nub list)
+buildFreqList :: Eq a => [a] -> [(a, Int)]
+buildFreqList list = map (\elem -> (elem, elemFreq elem)) $ nub list
+                     where
+                      elemFreq elem = length (filter (==elem) list)
 
 -- Data type and type synonym definitions
-data Bit = Zero | One deriving (Eq, Read, Show)
 data BTree a = Leaf a Int | Branch (BTree a) (BTree a) Int deriving Show
-
-type FrequencyList a = [(a, Int)]
-type EncodingMap a = [(a, Bits)]
+data Bit = Zero | One deriving (Eq, Read, Show)
 type Bits = [Bit]
 
 instance Eq (BTree a) where
@@ -31,19 +26,16 @@ treeFreq (Branch l r f) = f
 mergeTree :: BTree a -> BTree a -> BTree a 
 mergeTree l r = Branch l r ((treeFreq l) + (treeFreq r))
 
--- Maps an association list of symbol frequencies to corresponding leaves
-freqToLeaves :: FrequencyList a -> [BTree a]
-freqToLeaves freqs = map (\(a, b) -> Leaf a b) freqs
-
 -- Construct a Huffman binary tree given a list of symbol-frequency pairs
-buildTree :: Eq a => FrequencyList a -> BTree a
-buildTree list = buildTree' (sort (freqToLeaves list))
+buildTree :: Eq a => [(a, Int)] -> BTree a
+buildTree list = buildTree' . sort . leaves $ list
                  where
+                   leaves freqs = map (\(a, b) -> Leaf a b) freqs
                    buildTree' [x] = x
-                   buildTree' (x:y:r) = buildTree' (insert (mergeTree x y) r)
+                   buildTree' (x:y:r) = buildTree' $ insert (mergeTree x y) r
 
 -- Construct encoding map by depth-first exploration
-buildMap :: Eq a => BTree a -> EncodingMap a
+buildMap :: Eq a => BTree a -> [(a, Bits)]
 buildMap tree = buildMap' tree []
                 where
                   buildMap' (Branch l r _) list = buildMap' r (One:list) ++ buildMap' l (Zero:list)
@@ -51,7 +43,7 @@ buildMap tree = buildMap' tree []
                   buildMap' (Leaf symbol _) list = [(symbol, reverse list)]
 
 -- Encode a symbol using an encodingmap
-encodeElement :: Eq a => a -> EncodingMap a -> Bits
+encodeElement :: Eq a => a -> [(a, Bits)] -> Bits
 encodeElement elem mapping = let
                                result = lookup elem mapping
                              in
@@ -59,18 +51,13 @@ encodeElement elem mapping = let
                                  Just value -> value
                                  Nothing -> error "Error during lookup"
 
--- Encode a list of an equatable type given an encoding map
--- ConcatMap is used because each element is mapped to a list of bits
-encode' :: Eq a => [a] -> EncodingMap a -> Bits
-encode' lst mapping = concatMap (\elem -> encodeElement elem mapping) lst
-
 -- Encode a list of a totally ordered type and return an encoding and its Huffmann tree
 encode :: Eq a => [a] -> Maybe (BTree a, Bits)
 encode [] = Nothing
-encode lst = let
-               tree = buildTree (buildFreqList lst)
-             in
-               Just (tree, encode' lst (buildMap tree))
+encode lst = Just (tree, encode' $ buildMap tree)
+             where
+              tree = buildTree (buildFreqList lst)
+              encode' mapping = concatMap (\elem -> encodeElement elem mapping) lst
 
 -- Decode a string given a Huffman tree and bits
 -- If the root of the tree is a leaf and there are no bits, simply replicate the symbol at the leaf freq 
