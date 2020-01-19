@@ -1,1 +1,1 @@
-Haskell-Miniproject
+Huffmann coding in Haskell.
